@@ -9,6 +9,7 @@
         #chat { border: 1px solid #ccc; padding: 10px; width: 300px; height: 400px; overflow-y: scroll; }
         #messageInput { width: 80%; }
         #sendButton { width: 18%; }
+        textarea { width: 100%; height: 100px; }
     </style>
 </head>
 <body>
@@ -29,7 +30,7 @@
         const connect = document.getElementById('connect');
 
         let pc = new RTCPeerConnection();
-        let dataChannel;
+        let dataChannel = pc.createDataChannel("chat");
 
         function addMessage(message, sender) {
             const messageElement = document.createElement('div');
@@ -44,7 +45,8 @@
             }
         };
 
-        dataChannel = pc.createDataChannel("chat");
+        dataChannel.onopen = () => console.log('Data channel opened');
+        dataChannel.onclose = () => console.log('Data channel closed');
         dataChannel.onmessage = event => addMessage(event.data, 'User 2');
 
         pc.createOffer().then(offer => pc.setLocalDescription(offer));
