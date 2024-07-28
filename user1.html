@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Chat - User 1</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #chat { border: 1px solid #ccc; padding: 10px; width: 300px; height: 400px; overflow-y: scroll; }
+        #messageInput { width: 80%; }
+        #sendButton { width: 18%; }
+    </style>
+</head>
+<body>
+    <h1>WebRTC Chat - User 1</h1>
+    <div id="chat"></div>
+    <input type="text" id="messageInput" placeholder="Type a message">
+    <button id="sendButton">Send</button>
+    <textarea id="offer" placeholder="Paste this offer in User 2"></textarea>
+    <textarea id="answer" placeholder="Paste the answer from User 2"></textarea>
+    <button id="connect">Connect</button>
+
+    <script>
+        const chat = document.getElementById('chat');
+        const input = document.getElementById('messageInput');
+        const button = document.getElementById('sendButton');
+        const offer = document.getElementById('offer');
+        const answer = document.getElementById('answer');
+        const connect = document.getElementById('connect');
+
+        let pc = new RTCPeerConnection();
+        let dataChannel;
+
+        function addMessage(message, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = `${sender}: ${message}`;
+            chat.appendChild(messageElement);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        pc.onicecandidate = event => {
+            if (event.candidate) {
+                offer.value = JSON.stringify(pc.localDescription);
+            }
+        };
+
+        dataChannel = pc.createDataChannel("chat");
+        dataChannel.onmessage = event => addMessage(event.data, 'User 2');
+
+        pc.createOffer().then(offer => pc.setLocalDescription(offer));
+
+        button.onclick = () => {
+            const message = input.value;
+            if (message.trim() !== '') {
+                addMessage(message, 'User 1');
+                dataChannel.send(message);
+                input.value = '';
+            }
+        };
+
+        input.onkeypress = event => {
+            if (event.key === 'Enter') {
+                button.click();
+            }
+        };
+
+        connect.onclick = () => {
+            const answerDescription = new RTCSessionDescription(JSON.parse(answer.value));
+            pc.setRemoteDescription(answerDescription);
+        };
+    </script>
+</body>
+</html>
